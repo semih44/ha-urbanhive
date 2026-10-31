@@ -48,6 +48,7 @@ SENSORS: tuple[UrbanhiveSensorDescription, ...] = (
         device_class=SensorDeviceClass.HUMIDITY,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
+        suggested_display_precision=1,
         value_fn=lambda d: d.get("details", {}).get("humidity"),
     ),
     UrbanhiveSensorDescription(
@@ -56,6 +57,7 @@ SENSORS: tuple[UrbanhiveSensorDescription, ...] = (
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        suggested_display_precision=1,
         value_fn=lambda d: d.get("details", {}).get("temperature"),
     ),
     UrbanhiveSensorDescription(

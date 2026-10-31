@@ -44,6 +44,33 @@ LOCAL_TIMEOUT = 8
 CLOUD_TIMEOUT = 20
 
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=120)
+CATALOG_REFRESH = timedelta(hours=24)
+TASK_REFRESH = timedelta(minutes=15)
+
+# Beleuchtungsmodus: „Mach's individuell“ bzw. „Grow-Modus“ in der App.
+LIGHT_MODES = ["custom", "grow"]
+
+# Neue Dimmzeit wie in der App: 50 %, ohne Wochentag (= jeden Tag). Mit einem
+# Wochentag-Wert wie „ALL“ lehnt die Farm die Einstellung ab (HTTP 400).
+DEFAULT_DIM = {
+    "brightness": 50,
+    "startHour": 12,
+    "startMinute": 0,
+    "endHour": 14,
+    "endMinute": 0,
+    "weekDay": None,
+}
+
+# Aufgabentypen der App (für lesbare Aufgabentexte).
+TASK_TYPES = (
+    "CLEANING",
+    "FERTILIZER",
+    "HARVEST_MIN",
+    "HARVEST_MAX",
+    "TEMPERATURE",
+    "UPDATE_FARM",
+    "WATERLEVEL_LOW",
+)
 
 MANUFACTURER = "urbanhive"
 MODEL = "homefarm"

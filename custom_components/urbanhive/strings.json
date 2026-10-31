@@ -61,13 +61,77 @@
     },
     "binary_sensor": {
       "water_empty": {
-        "name": "Level {row} water empty"
+        "name": "Water empty"
       }
     },
     "light": {
       "row_light": {
-        "name": "Level {row} light"
+        "name": "Light"
       }
+    },
+    "select": {
+      "light_mode": {
+        "name": "Light mode",
+        "state": {
+          "custom": "Custom",
+          "grow": "Grow mode"
+        }
+      },
+      "slot": {
+        "name": "Slot {slot}"
+      }
+    },
+    "time": {
+      "light_start": {
+        "name": "Light on"
+      },
+      "light_end": {
+        "name": "Light off"
+      },
+      "dim_start": {
+        "name": "Dimming from"
+      },
+      "dim_end": {
+        "name": "Dimming until"
+      }
+    },
+    "number": {
+      "brightness": {
+        "name": "Brightness"
+      },
+      "dim_brightness": {
+        "name": "Dimming brightness"
+      }
+    },
+    "switch": {
+      "dimming": {
+        "name": "Dimming"
+      },
+      "water_check": {
+        "name": "Water check"
+      }
+    },
+    "todo": {
+      "tasks": {
+        "name": "Tasks"
+      }
+    }
+  },
+  "services": {
+    "set_plant_date": {
+      "name": "Set planting date",
+      "description": "Changes the planting date of the plant in a slot.",
+      "fields": {
+        "planted_at": {
+          "name": "Planted at",
+          "description": "When the plant was planted."
+        }
+      }
+    }
+  },
+  "device": {
+    "level": {
+      "name": "{farm} level {row}"
     }
   }
 }

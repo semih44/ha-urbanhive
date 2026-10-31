@@ -1,0 +1,10 @@
+set_plant_date:
+  target:
+    entity:
+      integration: urbanhive
+      domain: select
+  fields:
+    planted_at:
+      required: true
+      selector:
+        datetime:

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import time
+from datetime import UTC, datetime
 from typing import Any
 
 from aiohttp import ClientError, ClientSession
@@ -34,6 +35,38 @@ _LOGGER = logging.getLogger(__name__)
 
 # An jede Backend-Anfrage angehängte Parameter, die die App ebenfalls mitschickt.
 _APP_PARAMS = {"appVersion": APP_VERSION, "channel": CHANNEL, "lng": DEFAULT_LANG}
+
+# Felder, die die App beim Schreiben schickt (ihre Datenobjekte, ohne Anzeige-Extras).
+_DETAILS_KEYS = (
+    "brightness", "humidity", "localIP", "signalStrength", "temperature", "version",
+    "batchVersion", "farmEnv", "name", "mac", "timezone", "lightTime", "dimTimeList",
+)
+_ROW_KEYS = (
+    "id", "lightOn", "waterLevel", "plantSlots", "factorLED", "rowLightTime",
+    "waterCheckActive", "rowBrightness",
+)
+_SLOT_KEYS = ("id", "slotPlace", "plantId", "plantedAt", "harvestedAt", "customAttributes")
+_TASK_KEYS = (
+    "id", "taskType", "farmId", "farmRowId", "plantSlotId", "createdAt",
+    "completedAt", "ignoreUntil",
+)
+
+
+def iso_utc(when: datetime) -> str:
+    """Zeitpunkt so formatieren, wie die App ihn schickt (UTC mit „Z“).
+
+    Zeitangaben ohne Zeitzone liest das Backend als UTC.
+    """
+    when = when.astimezone(UTC)
+    return when.strftime("%Y-%m-%dT%H:%M:%S.") + f"{when.microsecond // 1000:03d}Z"
+
+
+def _slot_dto(slot: dict[str, Any]) -> dict[str, Any]:
+    return {k: slot.get(k) for k in _SLOT_KEYS}
+
+
+def _task_dto(task: dict[str, Any]) -> dict[str, Any]:
+    return {k: task.get(k) for k in _TASK_KEYS}
 
 
 class UrbanhiveError(Exception):
@@ -137,6 +170,8 @@ class UrbanhiveClient:
         self._auth = auth
         self._host = host
         self._prefer_cloud = prefer_cloud
+        # Wird gesetzt, wenn die Farm unter einer neuen Adresse gefunden wurde.
+        self.host_changed = False
 
     @property
     def host(self) -> str | None:
@@ -177,6 +212,17 @@ class UrbanhiveClient:
         farm = next((f for f in farms if f.get("id") == farm_id), None)
         if farm is None:
             raise UrbanhiveConnectionError("Farm nicht im Konto gefunden")
+        # Die Farm meldet ihre Adresse ans Konto. Hat sie eine neue (DHCP), dorthin wechseln.
+        new_host = farm.get("details", {}).get("localIP")
+        if not self._prefer_cloud and new_host and new_host != self._host:
+            try:
+                await self.async_get_info(new_host)
+            except UrbanhiveError:
+                return farm
+            _LOGGER.info("homefarm unter neuer Adresse %s gefunden", new_host)
+            self._host = new_host
+            self.host_changed = True
+            return await self._async_local_get(f"/v2/farms?id={farm_id}")
         return farm
 
     async def async_list_farms(self) -> list[dict[str, Any]]:
@@ -186,6 +232,11 @@ class UrbanhiveClient:
     async def async_get_plants(self) -> list[dict[str, Any]]:
         """Den Pflanzenkatalog aus der Cloud holen."""
         return await self._async_cloud_get("/plants")
+
+    async def async_get_cloud_farm(self, farm_id: str) -> dict[str, Any] | None:
+        """Den Cloud-Stand einer Farm holen (Bepflanzung, Aufgaben, Flags)."""
+        farms = await self._async_cloud_get("/farms")
+        return next((f for f in farms if f.get("id") == farm_id), None)
 
     async def async_set_row_light(
         self, farm_id: str, row: dict[str, Any], on: bool
@@ -201,15 +252,91 @@ class UrbanhiveClient:
         payload = {**row, "rowBrightness": max(0, min(100, brightness))}
         await self._async_put_row(farm_id, payload)
 
+    async def async_update_details(
+        self, farm_id: str, details: dict[str, Any]
+    ) -> None:
+        """Farm-Einstellungen (Lichtzeiten, Modus, Dimmen, Helligkeit) schreiben.
+
+        Wie die App: zuerst an die Farm, danach den gleichen Stand in die Cloud.
+        """
+        payload = {k: details.get(k) for k in _DETAILS_KEYS}
+        await self._async_write(
+            f"/v2/farms/details?id={farm_id}", f"/farms/details?id={farm_id}", payload
+        )
+
+    async def async_set_row(self, row: dict[str, Any]) -> None:
+        """Eine Ebene mit geänderten Feldern schreiben (z. B. Wasserprüfung)."""
+        await self._async_put_row("", row)
+
     async def _async_put_row(self, farm_id: str, row: dict[str, Any]) -> None:
-        row_id = row["id"]
+        payload = {k: row.get(k) for k in _ROW_KEYS}
+        await self._async_write(
+            f"/v2/rows?id={row['id']}", f"/rows?id={row['id']}", payload
+        )
+
+    async def _async_write(
+        self, local_path: str, cloud_path: str, payload: dict[str, Any]
+    ) -> None:
+        """An die Farm schreiben und die Cloud nachziehen (wie die App)."""
         if self._host and not self._prefer_cloud:
             try:
-                await self._async_local_put(f"/v2/rows?id={row_id}", row)
-                return
+                await self._async_local_put(local_path, payload)
             except UrbanhiveConnectionError as err:
-                _LOGGER.debug("Lokales Schalten fehlgeschlagen (%s), nutze Cloud", err)
-        await self._async_cloud_put(f"/rows?id={row_id}", row)
+                _LOGGER.debug("Lokales Schreiben fehlgeschlagen (%s), nutze Cloud", err)
+            else:
+                try:
+                    await self._async_cloud_put(cloud_path, payload)
+                except UrbanhiveError as err:
+                    _LOGGER.debug("Cloud nicht nachgezogen: %s", err)
+                return
+        await self._async_cloud_put(cloud_path, payload)
+
+    # -- Bepflanzung und Aufgaben (nur Cloud) -------------------------------
+
+    async def async_plant(
+        self, slot: dict[str, Any], plant_id: str, planted_at: datetime
+    ) -> None:
+        """Eine Pflanze in einen Platz eintragen."""
+        payload = {
+            **_slot_dto(slot),
+            "plantId": plant_id,
+            "plantedAt": iso_utc(planted_at),
+            "harvestedAt": None,
+        }
+        await self._async_cloud_put(f"/plantSlots/{slot['id']}/plant", payload)
+
+    async def async_harvest(
+        self, slot: dict[str, Any], harvested_at: datetime | None = None
+    ) -> None:
+        """Eine Pflanze ernten bzw. aus dem Platz nehmen.
+
+        Das Backend braucht ein Erntedatum, das nach dem Pflanzdatum liegt; sonst
+        antwortet es mit HTTP 500.
+        """
+        when = harvested_at or datetime.now(UTC)
+        payload = {**_slot_dto(slot), "harvestedAt": iso_utc(when)}
+        await self._async_cloud_put(f"/plantSlots/{slot['id']}/harvest", payload)
+
+    async def async_set_plant_date(
+        self, slot: dict[str, Any], planted_at: datetime
+    ) -> None:
+        """Das Pflanzdatum eines Platzes ändern."""
+        payload = {**_slot_dto(slot), "plantedAt": iso_utc(planted_at)}
+        await self._async_cloud_put(f"/plantSlots/{slot['id']}/date", payload)
+
+    async def async_complete_task(self, task: dict[str, Any]) -> None:
+        """Eine Aufgabe als erledigt melden.
+
+        Noch nicht gegen das echte Backend getestet (es gab beim Bau keine Aufgabe);
+        die Form folgt dem, was die App schickt.
+        """
+        payload = {**_task_dto(task), "completedAt": iso_utc(datetime.now(UTC))}
+        await self._async_cloud_put("/farm/tasks/complete", payload)
+
+    async def async_ignore_task(self, task: dict[str, Any], until: str) -> None:
+        """Eine Aufgabe bis zu einem Zeitpunkt ausblenden (ungetestet, siehe oben)."""
+        payload = {**_task_dto(task), "ignoreUntil": until}
+        await self._async_cloud_put("/farm/tasks/ignore", payload)
 
     # -- lokale Aufrufe -------------------------------------------------------
 

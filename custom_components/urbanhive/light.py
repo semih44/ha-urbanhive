@@ -38,10 +38,9 @@ class UrbanhiveRowLight(UrbanhiveEntity, LightEntity):
         self, coordinator: UrbanhiveCoordinator, row_id: str, index: int
     ) -> None:
         """Für eine Ebene anlegen."""
-        super().__init__(coordinator)
+        super().__init__(coordinator, row_id, index)
         self._row_id = row_id
         self._attr_unique_id = f"{coordinator.farm_id}_{row_id}_light"
-        self._attr_translation_placeholders = {"row": str(index)}
 
     @property
     def _row(self) -> dict[str, Any] | None:

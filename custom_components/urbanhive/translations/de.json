@@ -61,13 +61,77 @@
     },
     "binary_sensor": {
       "water_empty": {
-        "name": "Ebene {row} Wasser leer"
+        "name": "Wasser leer"
       }
     },
     "light": {
       "row_light": {
-        "name": "Ebene {row} Licht"
+        "name": "Licht"
       }
+    },
+    "select": {
+      "light_mode": {
+        "name": "Beleuchtungsmodus",
+        "state": {
+          "custom": "Individuell",
+          "grow": "Grow-Modus"
+        }
+      },
+      "slot": {
+        "name": "Platz {slot}"
+      }
+    },
+    "time": {
+      "light_start": {
+        "name": "Licht an"
+      },
+      "light_end": {
+        "name": "Licht aus"
+      },
+      "dim_start": {
+        "name": "Dimmen ab"
+      },
+      "dim_end": {
+        "name": "Dimmen bis"
+      }
+    },
+    "number": {
+      "brightness": {
+        "name": "Helligkeit"
+      },
+      "dim_brightness": {
+        "name": "Dimm-Helligkeit"
+      }
+    },
+    "switch": {
+      "dimming": {
+        "name": "Dimmen"
+      },
+      "water_check": {
+        "name": "Wasserprüfung"
+      }
+    },
+    "todo": {
+      "tasks": {
+        "name": "Aufgaben"
+      }
+    }
+  },
+  "services": {
+    "set_plant_date": {
+      "name": "Pflanzdatum ändern",
+      "description": "Ändert das Pflanzdatum der Pflanze in einem Platz.",
+      "fields": {
+        "planted_at": {
+          "name": "Gepflanzt am",
+          "description": "Wann die Pflanze eingesetzt wurde."
+        }
+      }
+    }
+  },
+  "device": {
+    "level": {
+      "name": "{farm} Ebene {row}"
     }
   }
 }

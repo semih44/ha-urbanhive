@@ -4,13 +4,24 @@ from __future__ import annotations
 
 from homeassistant.const import CONF_HOST, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import UrbanhiveAuth, UrbanhiveClient
 from .const import CONF_EMAIL, CONF_PASSWORD, CONF_PREFER_CLOUD
 from .coordinator import UrbanhiveConfigEntry, UrbanhiveCoordinator
+from .entity import farm_device_info
 
-PLATFORMS = [Platform.BINARY_SENSOR, Platform.LIGHT, Platform.SENSOR]
+PLATFORMS = [
+    Platform.BINARY_SENSOR,
+    Platform.LIGHT,
+    Platform.NUMBER,
+    Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.TIME,
+    Platform.TODO,
+]
 
 
 async def async_setup_entry(
@@ -26,6 +37,12 @@ async def async_setup_entry(
 
     coordinator = UrbanhiveCoordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()
+
+    # Das Farm-Gerät vorab anlegen, damit die Ebenen als Untergeräte darauf verweisen können.
+    device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, **farm_device_info(coordinator)
+    )
+    coordinator.device_id = device.id
 
     entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

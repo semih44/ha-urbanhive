@@ -10,14 +10,30 @@ signing in (and, optionally, as a fallback).
 
 ## Features
 
-- Live values read directly from the farm: humidity, temperature, Wi-Fi signal
-- Next cleaning date
-- Per level: water tank empty (problem sensor)
-- Per level: plant light on/off with brightness
-- Local first, cloud optional — the cloud only sees what the app would see anyway
+**Farm device**
 
-Planned: light schedule (start/end, grow mode, dimming), plant catalog, planted
-plants per slot with growth progress, farm tasks.
+- Live values read directly from the farm: humidity, temperature, Wi-Fi signal
+- Cleaning date
+- Light schedule: mode (custom / grow), light on and off time, brightness
+- Dimming: on/off, from/until and brightness (edits the first dimming window)
+- Tasks as a to-do list (complete; delete = hide for a week) — *experimental*
+
+**One sub-device per level** (works for farms with one or more levels)
+
+- Plant light on/off with brightness
+- Water tank empty (problem sensor) and water check on/off
+- One select per slot: shows the planted plant, lets you plant, swap or harvest
+  (choose "empty"); attributes: planted at, days, harvest window, progress
+- Action `urbanhive.set_plant_date` to correct the planting date
+
+**General**
+
+- Local first, cloud optional — the cloud is used for sign-in, the plant catalog
+  and tasks
+- The farm's address is picked up automatically, also after it changes
+
+Completing and hiding tasks follows what the app sends but has not been verified
+against the backend yet (no task existed while building it).
 
 ## How it works
 
