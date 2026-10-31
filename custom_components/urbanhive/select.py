@@ -5,8 +5,6 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import Any
 
-import voluptuous as vol
-
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
@@ -14,6 +12,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv, entity_platform
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
+import voluptuous as vol
 
 from .api import UrbanhiveError
 from .const import LIGHT_MODES
@@ -129,7 +128,9 @@ class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
     @property
     def options(self) -> list[str]:
         """Empty plus every plant of the catalog."""
-        names = sorted({p.get("name", "") for p in self.coordinator.plants.values()} - {""})
+        names = sorted(
+            {p.get("name", "") for p in self.coordinator.plants.values()} - {""}
+        )
         current = self.current_option
         if current and current not in names and current != _empty_label(self.hass):
             names.append(current)
@@ -164,12 +165,14 @@ class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
             grow = plant.get("daysToGrow") or {}
             if grow.get("min"):
                 minimum = int(grow["min"])
-                attrs["harvest_from"] = (planted + timedelta(days=minimum)).date().isoformat()
+                attrs["harvest_from"] = (
+                    (planted + timedelta(days=minimum)).date().isoformat()
+                )
                 attrs["progress"] = min(100, round(days * 100 / minimum))
             if grow.get("max"):
                 attrs["harvest_until"] = (
-                    planted + timedelta(days=int(grow["max"]))
-                ).date().isoformat()
+                    (planted + timedelta(days=int(grow["max"]))).date().isoformat()
+                )
             if plant.get("plantType"):
                 attrs["plant_type"] = plant["plantType"]
         return attrs
@@ -189,7 +192,11 @@ class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
                 }
             if option != _empty_label(self.hass):
                 plant_id = next(
-                    (pid for pid, p in self.coordinator.plants.items() if p.get("name") == option),
+                    (
+                        pid
+                        for pid, p in self.coordinator.plants.items()
+                        if p.get("name") == option
+                    ),
                     None,
                 )
                 if plant_id is None:

@@ -132,7 +132,9 @@ class UrbanhiveCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Apply a changed plant slot now and re-check it shortly after."""
         rows = []
         for row in self.data.get("rows", []):
-            slots = [slot if s.get("id") == slot_id else s for s in row.get("plantSlots", [])]
+            slots = [
+                slot if s.get("id") == slot_id else s for s in row.get("plantSlots", [])
+            ]
             rows.append({**row, "plantSlots": slots})
         self._apply({**self.data, "rows": rows})
 

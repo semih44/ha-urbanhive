@@ -36,7 +36,9 @@ async def async_setup_entry(
 
 
 def _read(source: dict[str, Any], prefix: str) -> time:
-    return time(int(source.get(f"{prefix}Hour", 0)), int(source.get(f"{prefix}Minute", 0)))
+    return time(
+        int(source.get(f"{prefix}Hour", 0)), int(source.get(f"{prefix}Minute", 0))
+    )
 
 
 class UrbanhiveLightTime(UrbanhiveEntity, TimeEntity):

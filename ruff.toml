@@ -1,0 +1,15 @@
+# Lint and format settings; a pragmatic subset of Home Assistant core's ruleset.
+target-version = "py313"
+line-length = 88
+
+[lint]
+select = ["ASYNC", "B", "E", "F", "I", "PIE", "RET", "RUF", "SIM", "UP", "W"]
+ignore = ["E501", "RUF001", "RUF012"]
+
+[lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components"]
+combine-as-imports = true
+
+[lint.per-file-ignores]
+"assets/**" = ["E", "B"]

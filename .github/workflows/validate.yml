@@ -3,7 +3,13 @@ name: Validate
 on:
   push:
   pull_request:
+  schedule:
+    # Daily run, so a new Home Assistant or HACS release that breaks validation shows up.
+    - cron: "0 4 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   hassfest:
@@ -20,3 +26,13 @@ jobs:
       - uses: hacs/action@main
         with:
           category: integration
+
+  ruff:
+    name: Ruff (lint and format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
+        with:
+          version: "0.14.0"
+      - run: ruff format --check .

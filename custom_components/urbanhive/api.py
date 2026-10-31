@@ -41,17 +41,47 @@ _APP_PARAMS = {"appVersion": APP_VERSION, "channel": CHANNEL, "lng": DEFAULT_LAN
 
 # Fields the app sends when writing (its data objects, without display-only extras).
 _DETAILS_KEYS = (
-    "brightness", "humidity", "localIP", "signalStrength", "temperature", "version",
-    "batchVersion", "farmEnv", "name", "mac", "timezone", "lightTime", "dimTimeList",
+    "brightness",
+    "humidity",
+    "localIP",
+    "signalStrength",
+    "temperature",
+    "version",
+    "batchVersion",
+    "farmEnv",
+    "name",
+    "mac",
+    "timezone",
+    "lightTime",
+    "dimTimeList",
 )
 _ROW_KEYS = (
-    "id", "lightOn", "waterLevel", "plantSlots", "factorLED", "rowLightTime",
-    "waterCheckActive", "rowBrightness",
+    "id",
+    "lightOn",
+    "waterLevel",
+    "plantSlots",
+    "factorLED",
+    "rowLightTime",
+    "waterCheckActive",
+    "rowBrightness",
 )
-_SLOT_KEYS = ("id", "slotPlace", "plantId", "plantedAt", "harvestedAt", "customAttributes")
+_SLOT_KEYS = (
+    "id",
+    "slotPlace",
+    "plantId",
+    "plantedAt",
+    "harvestedAt",
+    "customAttributes",
+)
 _TASK_KEYS = (
-    "id", "taskType", "farmId", "farmRowId", "plantSlotId", "createdAt",
-    "completedAt", "ignoreUntil",
+    "id",
+    "taskType",
+    "farmId",
+    "farmRowId",
+    "plantSlotId",
+    "createdAt",
+    "completedAt",
+    "ignoreUntil",
 )
 
 
@@ -291,9 +321,7 @@ class UrbanhiveClient:
             f"/v2/rows?id={row['id']}", f"/rows?id={row['id']}", payload
         )
 
-    async def async_update_details(
-        self, farm_id: str, details: dict[str, Any]
-    ) -> None:
+    async def async_update_details(self, farm_id: str, details: dict[str, Any]) -> None:
         """Write farm settings (light times, mode, dimming, brightness)."""
         payload = {k: details.get(k) for k in _DETAILS_KEYS}
         await self._async_write(

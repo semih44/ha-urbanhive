@@ -69,7 +69,9 @@ class UrbanhiveRowLight(UrbanhiveEntity, LightEntity):
         """Turn the light on, optionally with a brightness."""
         changes: dict[str, Any] = {"lightOn": True}
         if ATTR_BRIGHTNESS in kwargs:
-            changes["rowBrightness"] = max(1, round(kwargs[ATTR_BRIGHTNESS] * 100 / 255))
+            changes["rowBrightness"] = max(
+                1, round(kwargs[ATTR_BRIGHTNESS] * 100 / 255)
+            )
         await self._async_change(changes)
 
     async def async_turn_off(self, **kwargs: Any) -> None:

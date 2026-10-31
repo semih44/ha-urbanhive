@@ -1,0 +1,16 @@
+name: Feature request
+description: Something from the app or the farm that the integration should support
+labels: [enhancement]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What would you like to do?
+      description: Describe the use case, for example a screen or setting in the urbanhive app.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Screenshots of the app screen help a lot.

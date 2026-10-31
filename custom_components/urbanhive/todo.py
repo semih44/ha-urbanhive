@@ -90,9 +90,14 @@ class UrbanhiveTasks(UrbanhiveEntity, TodoListEntity):
         parts = [texts.get(kind, kind.replace("_", " ").capitalize())]
         row_id, slot_id = task.get("farmRowId"), task.get("plantSlotId")
         for index, row in enumerate(self.coordinator.data.get("rows", []), start=1):
-            if row.get("id") == row_id or any(s.get("id") == slot_id for s in row.get("plantSlots", [])):
+            if row.get("id") == row_id or any(
+                s.get("id") == slot_id for s in row.get("plantSlots", [])
+            ):
                 where = texts["row"].format(row=index)
-                slot = next((s for s in row.get("plantSlots", []) if s.get("id") == slot_id), None)
+                slot = next(
+                    (s for s in row.get("plantSlots", []) if s.get("id") == slot_id),
+                    None,
+                )
                 if slot:
                     where += ", " + texts["slot"].format(slot=slot.get("slotPlace"))
                     plant = self.coordinator.plants.get(str(slot.get("plantId")))
@@ -116,7 +121,9 @@ class UrbanhiveTasks(UrbanhiveEntity, TodoListEntity):
         ]
 
     def _task(self, uid: str) -> dict[str, Any]:
-        task = next((t for t in self.coordinator.tasks if str(t.get("id")) == uid), None)
+        task = next(
+            (t for t in self.coordinator.tasks if str(t.get("id")) == uid), None
+        )
         if task is None:
             raise HomeAssistantError("Task not found")
         return task

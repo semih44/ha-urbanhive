@@ -37,7 +37,9 @@ class UrbanhiveCleaned(UrbanhiveEntity, ButtonEntity):
         """Store now as the last cleaning."""
         now = dt_util.utcnow()
         try:
-            await self.coordinator.client.async_set_cleaned(self.coordinator.farm_id, now)
+            await self.coordinator.client.async_set_cleaned(
+                self.coordinator.farm_id, now
+            )
         except UrbanhiveError as err:
             raise HomeAssistantError(f"Cleaning not recorded: {err}") from err
         self.coordinator.async_refresh_tasks_soon()

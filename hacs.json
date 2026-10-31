@@ -1,5 +1,9 @@
 {
   "name": "urbanhive homefarm",
+  "content_in_root": false,
+  "zip_release": true,
+  "filename": "urbanhive.zip",
+  "hide_default_branch": true,
   "render_readme": true,
   "homeassistant": "2026.7.0"
 }

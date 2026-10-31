@@ -131,4 +131,6 @@ class UrbanhiveWaterCheck(UrbanhiveEntity, SwitchEntity):
             )
         except UrbanhiveError as err:
             raise HomeAssistantError(f"Water check not changed: {err}") from err
-        await self.coordinator.async_apply_row(self._row_id, {"waterCheckActive": active})
+        await self.coordinator.async_apply_row(
+            self._row_id, {"waterCheckActive": active}
+        )

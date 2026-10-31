@@ -82,6 +82,9 @@ async def _async_options_updated(
     host = entry.options.get(CONF_HOST) or entry.data.get(CONF_HOST)
     prefer_cloud = entry.options.get(CONF_PREFER_CLOUD, False)
     # Updates of the stored token or a followed address need no reload.
-    if host == coordinator.client.host and prefer_cloud == coordinator.client.prefer_cloud:
+    if (
+        host == coordinator.client.host
+        and prefer_cloud == coordinator.client.prefer_cloud
+    ):
         return
     await hass.config_entries.async_reload(entry.entry_id)

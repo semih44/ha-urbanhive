@@ -1,8 +1,13 @@
 # urbanhive homefarm for Home Assistant
 
+[![release](https://img.shields.io/github/v/release/semih44/ha-urbanhive?label=release)](https://github.com/semih44/ha-urbanhive/releases)
+[![downloads](https://img.shields.io/github/downloads/semih44/ha-urbanhive/total?label=downloads&color=brightgreen)](https://github.com/semih44/ha-urbanhive/releases)
+[![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5)](https://hacs.xyz/docs/faq/custom_repositories)
+[![License](https://img.shields.io/github/license/semih44/ha-urbanhive?color=yellow)](LICENSE)
+
 Unofficial Home Assistant integration for the **urbanhive homefarm** indoor farm.
 It reads the farm **locally on your network** and only uses the urbanhive cloud for
-signing in (and, optionally, as a fallback).
+signing in, catalog and tasks (and, optionally, instead of the local connection).
 
 > **Not affiliated with urbanhive GmbH.** This integration talks to an undocumented
 > interface of the farm and the urbanhive backend. It can stop working whenever
@@ -46,7 +51,7 @@ against the backend yet (no task existed while building it).
 |---|---|
 | Sign-in | Firebase Auth with your urbanhive email and password |
 | Farm data and light control | HTTP API of the farm on your local network (port 80) |
-| Fallback when the farm is not reachable | urbanhive cloud backend (values may be outdated) |
+| Farm not reachable locally | cloud is only asked for the farm's new IP address; otherwise the entities become unavailable |
 
 The farm's address is detected automatically from your account during setup.
 Make sure the farm keeps the same IP address (DHCP reservation in your router).
@@ -56,13 +61,15 @@ Make sure the farm keeps the same IP address (DHCP reservation in your router).
 ### HACS (custom repository)
 
 1. HACS → three dots → **Custom repositories**
-2. Add this repository as type **Integration**
+2. Add `https://github.com/semih44/ha-urbanhive` as type **Integration**
 3. Install **urbanhive homefarm** and restart Home Assistant
+
+HACS installs tagged releases and shows new ones as updates in Home Assistant.
 
 ### Manual
 
-Copy `custom_components/urbanhive` into your Home Assistant `config/custom_components`
-folder and restart Home Assistant.
+Download `urbanhive.zip` from the [latest release](https://github.com/semih44/ha-urbanhive/releases/latest),
+extract it into `config/custom_components/urbanhive` and restart Home Assistant.
 
 ## Setup
 
