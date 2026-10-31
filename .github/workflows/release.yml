@@ -1,7 +1,7 @@
 name: Release
 
 # Push a tag like v0.3.2 to publish a release. The tag must match the version in
-# manifest.json. HACS installs the attached urbanhive.zip (see hacs.json).
+# manifest.json and CHANGELOG.md needs a "## v0.3.2" section with the notes. HACS installs the attached urbanhive.zip (see hacs.json).
 
 on:
   push:
@@ -30,7 +30,16 @@ jobs:
         # custom_components/urbanhive.
         run: git archive --format=zip --output=urbanhive.zip "HEAD:custom_components/urbanhive"
 
+      - name: Release notes from CHANGELOG.md
+        # The section "## vX.Y.Z" up to the next version heading.
+        run: |
+          awk -v tag="## $GITHUB_REF_NAME" '$0 == tag {found=1; next} /^## v/ && found {exit} found' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "::error::CHANGELOG.md has no section for $GITHUB_REF_NAME"
+            exit 1
+          fi
+
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" urbanhive.zip --title "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        run: gh release create "$GITHUB_REF_NAME" urbanhive.zip --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
