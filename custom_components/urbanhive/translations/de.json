@@ -1,0 +1,73 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "urbanhive homefarm",
+        "description": "Melde dich mit deinem urbanhive-Konto an. Die Farm wird lokal im Heimnetz ausgelesen; die Cloud dient nur der Anmeldung und als Rückfall.",
+        "data": {
+          "email": "E-Mail",
+          "password": "Passwort",
+          "host": "Lokale Adresse (optional)"
+        },
+        "data_description": {
+          "host": "IP-Adresse der Farm im Heimnetz. Leer lassen, um sie automatisch zu finden."
+        }
+      },
+      "farm": {
+        "title": "Farm auswählen",
+        "data": {
+          "farm_id": "Farm"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "E-Mail oder Passwort falsch.",
+      "cannot_connect": "urbanhive ist nicht erreichbar.",
+      "unknown": "Unerwarteter Fehler.",
+      "no_farms": "In diesem Konto ist keine Farm."
+    },
+    "abort": {
+      "already_configured": "Diese Farm ist schon eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen",
+        "data": {
+          "host": "Lokale Adresse (optional)",
+          "prefer_cloud": "Cloud statt lokalem Zugriff nutzen"
+        },
+        "data_description": {
+          "prefer_cloud": "Nur sinnvoll, wenn die Farm im Heimnetz nicht erreichbar ist. Die Cloud-Werte können veraltet sein."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "humidity": {
+        "name": "Luftfeuchte"
+      },
+      "temperature": {
+        "name": "Temperatur"
+      },
+      "signal_strength": {
+        "name": "WLAN-Signal"
+      },
+      "cleaning_date": {
+        "name": "Reinigung"
+      }
+    },
+    "binary_sensor": {
+      "water_empty": {
+        "name": "Ebene {row} Wasser leer"
+      }
+    },
+    "light": {
+      "row_light": {
+        "name": "Ebene {row} Licht"
+      }
+    }
+  }
+}

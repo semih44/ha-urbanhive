@@ -1,0 +1,73 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "urbanhive homefarm",
+        "description": "Sign in with your urbanhive account. The farm is read locally on your network; the cloud is only used for sign-in and as a fallback.",
+        "data": {
+          "email": "Email",
+          "password": "Password",
+          "host": "Local address (optional)"
+        },
+        "data_description": {
+          "host": "IP address of the farm on your network. Leave empty to detect it automatically."
+        }
+      },
+      "farm": {
+        "title": "Choose farm",
+        "data": {
+          "farm_id": "Farm"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Wrong email or password.",
+      "cannot_connect": "Could not reach urbanhive.",
+      "unknown": "Unexpected error.",
+      "no_farms": "No farm found in this account."
+    },
+    "abort": {
+      "already_configured": "This farm is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "host": "Local address (optional)",
+          "prefer_cloud": "Use cloud instead of local access"
+        },
+        "data_description": {
+          "prefer_cloud": "Only useful if the farm is not reachable on your network. Cloud values may be outdated."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "humidity": {
+        "name": "Humidity"
+      },
+      "temperature": {
+        "name": "Temperature"
+      },
+      "signal_strength": {
+        "name": "Wi-Fi signal"
+      },
+      "cleaning_date": {
+        "name": "Cleaning"
+      }
+    },
+    "binary_sensor": {
+      "water_empty": {
+        "name": "Level {row} water empty"
+      }
+    },
+    "light": {
+      "row_light": {
+        "name": "Level {row} light"
+      }
+    }
+  }
+}
