@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.2
+
+Maintenance release, no changes to entities or behaviour.
+
+- Releases now carry release notes, shown by HACS and Home Assistant before you update
+- Code checked with Ruff in CI, plus a daily validation run against current Home
+  Assistant and HACS
+- Issue templates for bug reports and feature requests
+
 ## v0.3.1
 
 First release on GitHub. Install it through HACS as a custom repository; HACS will
