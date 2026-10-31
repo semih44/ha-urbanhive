@@ -65,6 +65,8 @@ DEFAULT_DIM = {
     "endMinute": 0,
     "weekDay": None,
 }
+# Start hour of a newly added window (two hours long), so windows do not overlap.
+DIM_DEFAULT_STARTS = (12, 15, 18, 9, 6)
 
 # Flag holding the date of the last cleaning; the app treats a cleaning as valid for
 # 28 days.

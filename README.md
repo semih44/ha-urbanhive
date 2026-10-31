@@ -16,7 +16,7 @@ signing in (and, optionally, as a fallback).
 - Last and next cleaning (the app treats a cleaning as valid for 28 days) and a
   "cleaning done" button
 - Light schedule: mode (custom / grow), light on and off time, brightness
-- Up to three dimming windows, each with from/until and brightness
+- Up to five dimming windows (like the app), each with from/until and brightness
 - Tasks as a to-do list (complete; delete = hide for a week) - *experimental*
 - Diagnostics download with credentials and addresses redacted
 

@@ -10,9 +10,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, MANUFACTURER, MODEL
 from .coordinator import UrbanhiveCoordinator
 
-# Home Assistant offers this many dimming windows; the app allows more, extra windows
-# set there are kept untouched.
-MAX_DIM_WINDOWS = 3
+# The app allows up to five dimming windows.
+MAX_DIM_WINDOWS = 5
 
 
 class UrbanhiveEntity(CoordinatorEntity[UrbanhiveCoordinator]):

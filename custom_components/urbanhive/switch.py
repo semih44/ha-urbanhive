@@ -11,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api import UrbanhiveError
-from .const import DEFAULT_DIM
+from .const import DEFAULT_DIM, DIM_DEFAULT_STARTS
 from .coordinator import UrbanhiveConfigEntry, UrbanhiveCoordinator
 from .entity import (
     MAX_DIM_WINDOWS,
@@ -73,7 +73,7 @@ class UrbanhiveDimWindow(UrbanhiveEntity, SwitchEntity):
         """Add the window (two hours at 50 %, adjustable afterwards)."""
         if self.is_on:
             return
-        start = 12 + 3 * self._index
+        start = DIM_DEFAULT_STARTS[self._index % len(DIM_DEFAULT_STARTS)]
         new = {**DEFAULT_DIM, "startHour": start, "endHour": start + 2}
         await self._async_set(with_dim_entry(self._details, self._index, new))
 
