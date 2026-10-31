@@ -13,10 +13,12 @@ signing in (and, optionally, as a fallback).
 **Farm device**
 
 - Live values read directly from the farm: humidity, temperature, Wi-Fi signal
-- Cleaning date
+- Last and next cleaning (the app treats a cleaning as valid for 28 days) and a
+  "cleaning done" button
 - Light schedule: mode (custom / grow), light on and off time, brightness
-- Dimming: on/off, from/until and brightness (edits the first dimming window)
-- Tasks as a to-do list (complete; delete = hide for a week) — *experimental*
+- Up to three dimming windows, each with from/until and brightness
+- Tasks as a to-do list (complete; delete = hide for a week) - *experimental*
+- Diagnostics download with credentials and addresses redacted
 
 **One sub-device per level** (works for farms with one or more levels)
 
@@ -28,9 +30,12 @@ signing in (and, optionally, as a fallback).
 
 **General**
 
-- Local first, cloud optional — the cloud is used for sign-in, the plant catalog
-  and tasks
-- The farm's address is picked up automatically, also after it changes
+- Local first: live values and control come from the farm itself. The cloud is used
+  for sign-in, the plant catalog, plant slots and tasks. If the farm is not reachable,
+  its entities become unavailable instead of showing outdated cloud values.
+- Only a refresh token is stored, not your password; Home Assistant asks you to sign
+  in again if it stops working.
+- The farm's address is picked up automatically, also after it changes.
 
 Completing and hiding tasks follows what the app sends but has not been verified
 against the backend yet (no task existed while building it).

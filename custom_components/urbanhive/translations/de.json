@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "urbanhive homefarm",
-        "description": "Melde dich mit deinem urbanhive-Konto an. Die Farm wird lokal im Heimnetz ausgelesen; die Cloud dient nur der Anmeldung und als Rückfall.",
+        "description": "Melde dich mit deinem urbanhive-Konto an. Die Farm wird lokal im Heimnetz ausgelesen und gesteuert; die Cloud dient der Anmeldung, dem Pflanzenkatalog und den Aufgaben.",
         "data": {
           "email": "E-Mail",
           "password": "Passwort",
@@ -18,6 +18,13 @@
         "data": {
           "farm_id": "Farm"
         }
+      },
+      "reauth_confirm": {
+        "title": "Neu anmelden",
+        "description": "Die Anmeldung für {email} ist nicht mehr gültig. Gib dein urbanhive-Passwort ein.",
+        "data": {
+          "password": "Passwort"
+        }
       }
     },
     "error": {
@@ -27,7 +34,8 @@
       "no_farms": "In diesem Konto ist keine Farm."
     },
     "abort": {
-      "already_configured": "Diese Farm ist schon eingerichtet."
+      "already_configured": "Diese Farm ist schon eingerichtet.",
+      "reauth_successful": "Wieder angemeldet."
     }
   },
   "options": {
@@ -44,6 +52,11 @@
       }
     }
   },
+  "device": {
+    "level": {
+      "name": "{farm} Ebene {row}"
+    }
+  },
   "entity": {
     "sensor": {
       "humidity": {
@@ -55,8 +68,11 @@
       "signal_strength": {
         "name": "WLAN-Signal"
       },
-      "cleaning_date": {
-        "name": "Reinigung"
+      "last_cleaning": {
+        "name": "Letzte Reinigung"
+      },
+      "next_cleaning": {
+        "name": "Nächste Reinigung"
       }
     },
     "binary_sensor": {
@@ -89,10 +105,10 @@
         "name": "Licht aus"
       },
       "dim_start": {
-        "name": "Dimmen ab"
+        "name": "Dimmzeit {window} ab"
       },
       "dim_end": {
-        "name": "Dimmen bis"
+        "name": "Dimmzeit {window} bis"
       }
     },
     "number": {
@@ -100,12 +116,12 @@
         "name": "Helligkeit"
       },
       "dim_brightness": {
-        "name": "Dimm-Helligkeit"
+        "name": "Dimmzeit {window} Helligkeit"
       }
     },
     "switch": {
       "dimming": {
-        "name": "Dimmen"
+        "name": "Dimmzeit {window}"
       },
       "water_check": {
         "name": "Wasserprüfung"
@@ -114,6 +130,11 @@
     "todo": {
       "tasks": {
         "name": "Aufgaben"
+      }
+    },
+    "button": {
+      "cleaned": {
+        "name": "Reinigung erledigt"
       }
     }
   },
@@ -127,11 +148,6 @@
           "description": "Wann die Pflanze eingesetzt wurde."
         }
       }
-    }
-  },
-  "device": {
-    "level": {
-      "name": "{farm} Ebene {row}"
     }
   }
 }

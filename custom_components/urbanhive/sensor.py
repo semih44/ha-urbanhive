@@ -1,4 +1,4 @@
-"""Sensoren der urbanhive-homefarm."""
+"""Sensors of the urbanhive homefarm."""
 
 from __future__ import annotations
 
@@ -23,20 +23,27 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.util import dt as dt_util
 
+from .const import CLEANING_INTERVAL, FLAG_CLEANING
 from .coordinator import UrbanhiveConfigEntry, UrbanhiveCoordinator
 from .entity import UrbanhiveEntity
 
 
-def _cleaning_date(data: dict[str, Any]) -> datetime | None:
+def last_cleaning(data: dict[str, Any]) -> datetime | None:
+    """Time of the last cleaning confirmed in the app (or via the button)."""
     for flag in data.get("flags", []):
-        if flag.get("key") == "farm.cleaning-date" and flag.get("value"):
+        if flag.get("key") == FLAG_CLEANING and flag.get("value"):
             return dt_util.parse_datetime(flag["value"])
     return None
 
 
+def _next_cleaning(data: dict[str, Any]) -> datetime | None:
+    last = last_cleaning(data)
+    return last + CLEANING_INTERVAL if last else None
+
+
 @dataclass(frozen=True, kw_only=True)
 class UrbanhiveSensorDescription(SensorEntityDescription):
-    """Beschreibt einen Sensor und woher sein Wert kommt."""
+    """Describes a sensor and where its value comes from."""
 
     value_fn: Callable[[dict[str, Any]], Any]
 
@@ -70,11 +77,18 @@ SENSORS: tuple[UrbanhiveSensorDescription, ...] = (
         entity_registry_enabled_default=False,
         value_fn=lambda d: d.get("details", {}).get("signalStrength"),
     ),
+    # Key kept from earlier versions so the entity ID stays the same.
     UrbanhiveSensorDescription(
         key="cleaning_date",
-        translation_key="cleaning_date",
+        translation_key="last_cleaning",
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=_cleaning_date,
+        value_fn=last_cleaning,
+    ),
+    UrbanhiveSensorDescription(
+        key="next_cleaning",
+        translation_key="next_cleaning",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=_next_cleaning,
     ),
 )
 
@@ -84,15 +98,13 @@ async def async_setup_entry(
     entry: UrbanhiveConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Die Sensoren einrichten."""
+    """Set up the sensors."""
     coordinator = entry.runtime_data
-    async_add_entities(
-        UrbanhiveSensor(coordinator, description) for description in SENSORS
-    )
+    async_add_entities(UrbanhiveSensor(coordinator, d) for d in SENSORS)
 
 
 class UrbanhiveSensor(UrbanhiveEntity, SensorEntity):
-    """Ein einzelner Messwert der Farm."""
+    """A single value of the farm."""
 
     entity_description: UrbanhiveSensorDescription
 
@@ -101,12 +113,12 @@ class UrbanhiveSensor(UrbanhiveEntity, SensorEntity):
         coordinator: UrbanhiveCoordinator,
         description: UrbanhiveSensorDescription,
     ) -> None:
-        """Mit Koordinator und Beschreibung anlegen."""
+        """Create with coordinator and description."""
         super().__init__(coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{coordinator.farm_id}_{description.key}"
 
     @property
     def native_value(self) -> Any:
-        """Aktueller Messwert."""
+        """Current value."""
         return self.entity_description.value_fn(self.coordinator.data)

@@ -1,4 +1,4 @@
-"""Auswahlfelder der urbanhive-homefarm: Lichtmodus und Bepflanzung je Platz."""
+"""Selects of the urbanhive homefarm: light mode and the plant of each slot."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def _empty_label(hass: HomeAssistant) -> str:
 
 
 def parse_backend_time(value: str | None) -> datetime | None:
-    """Zeitangabe des Backends lesen; ohne Zeitzone gilt sie als UTC."""
+    """Parse a backend timestamp; without a time zone it is UTC."""
     if not value:
         return None
     parsed = dt_util.parse_datetime(value)
@@ -43,14 +43,14 @@ async def async_setup_entry(
     entry: UrbanhiveConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Lichtmodus und je Pflanzplatz ein Auswahlfeld einrichten."""
+    """Set up the light mode and one select per plant slot."""
     coordinator = entry.runtime_data
     entities: list[SelectEntity] = [UrbanhiveLightMode(coordinator)]
-    for row_index, row in enumerate(coordinator.data.get("rows", []), start=1):
+    for number, row in enumerate(coordinator.data.get("rows", []), start=1):
         for slot in row.get("plantSlots", []):
             entities.append(
                 UrbanhiveSlotSelect(
-                    coordinator, slot["id"], row["id"], row_index, slot.get("slotPlace", 0)
+                    coordinator, slot["id"], row["id"], number, slot.get("slotPlace", 0)
                 )
             )
     async_add_entities(entities)
@@ -64,34 +64,34 @@ async def async_setup_entry(
 
 
 class UrbanhiveLightMode(UrbanhiveEntity, SelectEntity):
-    """Beleuchtungsmodus: individuell oder Grow-Modus."""
+    """Light mode: custom or grow mode."""
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_options = LIGHT_MODES
     _attr_translation_key = "light_mode"
 
     def __init__(self, coordinator: UrbanhiveCoordinator) -> None:
-        """Mit dem Koordinator anlegen."""
+        """Create with the coordinator."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{coordinator.farm_id}_light_mode"
 
     @property
     def current_option(self) -> str | None:
-        """Aktiver Modus."""
+        """Active mode."""
         mode = self._details.get("lightTime", {}).get("lightMode")
         return mode if mode in LIGHT_MODES else None
 
     async def async_select_option(self, option: str) -> None:
-        """Modus wechseln."""
+        """Switch the mode."""
         light_time = {**self._details.get("lightTime", {}), "lightMode": option}
         try:
             await self.coordinator.async_set_details({"lightTime": light_time})
         except UrbanhiveError as err:
-            raise HomeAssistantError(f"Modus nicht geändert: {err}") from err
+            raise HomeAssistantError(f"Mode not changed: {err}") from err
 
 
 class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
-    """Ein Pflanzplatz: zeigt die Pflanze und lässt sie eintragen oder ernten."""
+    """A plant slot: shows the plant and lets you plant, swap or harvest."""
 
     _attr_translation_key = "slot"
 
@@ -100,11 +100,11 @@ class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
         coordinator: UrbanhiveCoordinator,
         slot_id: str,
         row_id: str,
-        row: int,
+        row_number: int,
         place: int,
     ) -> None:
-        """Für einen Platz anlegen."""
-        super().__init__(coordinator, row_id, row)
+        """Create for one slot."""
+        super().__init__(coordinator, row_id, row_number)
         self._slot_id = slot_id
         self._attr_unique_id = f"{coordinator.farm_id}_{slot_id}_slot"
         self._attr_translation_placeholders = {"slot": str(place)}
@@ -123,12 +123,12 @@ class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
 
     @property
     def available(self) -> bool:
-        """Nur verfügbar, solange der Platz in den Daten steht."""
+        """Only while the slot is part of the data."""
         return super().available and self._slot is not None
 
     @property
     def options(self) -> list[str]:
-        """Leer plus alle Pflanzen aus dem Katalog."""
+        """Empty plus every plant of the catalog."""
         names = sorted({p.get("name", "") for p in self.coordinator.plants.values()} - {""})
         current = self.current_option
         if current and current not in names and current != _empty_label(self.hass):
@@ -137,7 +137,7 @@ class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
-        """Name der Pflanze oder „leer“."""
+        """Name of the plant, or empty."""
         slot = self._slot
         if slot is None:
             return None
@@ -148,17 +148,17 @@ class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Pflanzdatum, Erntefenster und Fortschritt."""
+        """Planting date, harvest window and progress."""
         slot = self._slot or {}
         planted = parse_backend_time(slot.get("plantedAt"))
         if planted is None:
             return {}
+        days = (dt_util.utcnow() - planted).days
         attrs: dict[str, Any] = {
             "plant_id": slot.get("plantId"),
             "planted_at": planted.isoformat(),
+            "days_planted": days,
         }
-        days = (dt_util.utcnow() - planted).days
-        attrs["days_planted"] = days
         plant = self._plant
         if plant:
             grow = plant.get("daysToGrow") or {}
@@ -175,37 +175,45 @@ class UrbanhiveSlotSelect(UrbanhiveEntity, SelectEntity):
         return attrs
 
     async def async_select_option(self, option: str) -> None:
-        """Pflanze eintragen, wechseln oder (mit „leer“) ernten."""
+        """Plant, swap or (with "empty") harvest."""
         slot = self._slot
         if slot is None:
-            raise HomeAssistantError("Pflanzplatz nicht gefunden")
+            raise HomeAssistantError("Plant slot not found")
         try:
             if slot.get("plantId"):
                 await self.coordinator.client.async_harvest(slot)
-                slot = {k: v for k, v in slot.items() if k not in ("plantId", "plantedAt", "harvestedAt")}
+                slot = {
+                    k: v
+                    for k, v in slot.items()
+                    if k not in ("plantId", "plantedAt", "harvestedAt")
+                }
             if option != _empty_label(self.hass):
                 plant_id = next(
                     (pid for pid, p in self.coordinator.plants.items() if p.get("name") == option),
                     None,
                 )
                 if plant_id is None:
-                    raise HomeAssistantError(f"Unbekannte Pflanze: {option}")
+                    raise HomeAssistantError(f"Unknown plant: {option}")
                 now = dt_util.utcnow()
                 await self.coordinator.client.async_plant(slot, plant_id, now)
                 slot = {**slot, "plantId": plant_id, "plantedAt": now.isoformat()}
         except UrbanhiveError as err:
-            raise HomeAssistantError(f"Bepflanzung nicht geändert: {err}") from err
+            raise HomeAssistantError(f"Planting not changed: {err}") from err
         self.coordinator.async_refresh_tasks_soon()
         await self.coordinator.async_apply_slot(self._slot_id, slot)
 
     async def async_set_plant_date(self, planted_at: datetime) -> None:
-        """Pflanzdatum ändern (Aktion urbanhive.set_plant_date)."""
+        """Change the planting date (action urbanhive.set_plant_date)."""
         slot = self._slot
         if not slot or not slot.get("plantId"):
-            raise HomeAssistantError("In diesem Platz steht keine Pflanze")
-        when = dt_util.as_utc(planted_at if planted_at.tzinfo else planted_at.replace(tzinfo=dt_util.get_default_time_zone()))
+            raise HomeAssistantError("There is no plant in this slot")
+        if planted_at.tzinfo is None:
+            planted_at = planted_at.replace(tzinfo=dt_util.get_default_time_zone())
+        when = dt_util.as_utc(planted_at)
         try:
             await self.coordinator.client.async_set_plant_date(slot, when)
         except UrbanhiveError as err:
-            raise HomeAssistantError(f"Datum nicht geändert: {err}") from err
-        await self.coordinator.async_apply_slot(self._slot_id, {**slot, "plantedAt": when.isoformat()})
+            raise HomeAssistantError(f"Date not changed: {err}") from err
+        await self.coordinator.async_apply_slot(
+            self._slot_id, {**slot, "plantedAt": when.isoformat()}
+        )

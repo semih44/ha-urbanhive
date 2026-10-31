@@ -1,4 +1,4 @@
-"""Aufgaben der urbanhive-homefarm als To-do-Liste."""
+"""Tasks of the urbanhive homefarm as a to-do list."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from .coordinator import UrbanhiveConfigEntry, UrbanhiveCoordinator
 from .entity import UrbanhiveEntity
 from .select import parse_backend_time
 
-# „Löschen“ in der To-do-Liste blendet eine Aufgabe für eine Woche aus (wie „Ignorieren“).
+# Deleting an item hides the task for a week (like "ignore" in the app).
 IGNORE_FOR = timedelta(days=7)
 
 _TEXTS = {
@@ -55,12 +55,12 @@ async def async_setup_entry(
     entry: UrbanhiveConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Die Aufgabenliste einrichten."""
+    """Set up the task list."""
     async_add_entities([UrbanhiveTasks(entry.runtime_data)])
 
 
 class UrbanhiveTasks(UrbanhiveEntity, TodoListEntity):
-    """Offene Aufgaben der Farm (reinigen, ernten, Wasser, …)."""
+    """Open tasks of the farm (clean, harvest, water, ...)."""
 
     _attr_translation_key = "tasks"
     _attr_supported_features = (
@@ -68,7 +68,7 @@ class UrbanhiveTasks(UrbanhiveEntity, TodoListEntity):
     )
 
     def __init__(self, coordinator: UrbanhiveCoordinator) -> None:
-        """Mit dem Koordinator anlegen."""
+        """Create with the coordinator."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{coordinator.farm_id}_tasks"
 
@@ -104,7 +104,7 @@ class UrbanhiveTasks(UrbanhiveEntity, TodoListEntity):
 
     @property
     def todo_items(self) -> list[TodoItem]:
-        """Offene Aufgaben als To-do-Einträge."""
+        """Open tasks as to-do items."""
         return [
             TodoItem(
                 uid=str(task["id"]),
@@ -118,27 +118,27 @@ class UrbanhiveTasks(UrbanhiveEntity, TodoListEntity):
     def _task(self, uid: str) -> dict[str, Any]:
         task = next((t for t in self.coordinator.tasks if str(t.get("id")) == uid), None)
         if task is None:
-            raise HomeAssistantError("Aufgabe nicht gefunden")
+            raise HomeAssistantError("Task not found")
         return task
 
     async def async_update_todo_item(self, item: TodoItem) -> None:
-        """Abhaken meldet die Aufgabe als erledigt."""
+        """Checking an item marks the task as done."""
         if item.status != TodoItemStatus.COMPLETED or item.uid is None:
             return
         try:
             await self.coordinator.client.async_complete_task(self._task(item.uid))
         except UrbanhiveError as err:
-            raise HomeAssistantError(f"Aufgabe nicht erledigt: {err}") from err
+            raise HomeAssistantError(f"Task not completed: {err}") from err
         await self._async_after_change()
 
     async def async_delete_todo_items(self, uids: list[str]) -> None:
-        """Löschen blendet Aufgaben für eine Woche aus."""
+        """Deleting hides tasks for a week."""
         until = iso_utc(dt_util.utcnow() + IGNORE_FOR)
         try:
             for uid in uids:
                 await self.coordinator.client.async_ignore_task(self._task(uid), until)
         except UrbanhiveError as err:
-            raise HomeAssistantError(f"Aufgabe nicht ausgeblendet: {err}") from err
+            raise HomeAssistantError(f"Task not hidden: {err}") from err
         await self._async_after_change()
 
     async def _async_after_change(self) -> None:

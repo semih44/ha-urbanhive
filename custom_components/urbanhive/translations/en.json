@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "urbanhive homefarm",
-        "description": "Sign in with your urbanhive account. The farm is read locally on your network; the cloud is only used for sign-in and as a fallback.",
+        "description": "Sign in with your urbanhive account. The farm is read and controlled locally on your network; the cloud is used for sign-in, the plant catalog and tasks.",
         "data": {
           "email": "Email",
           "password": "Password",
@@ -18,6 +18,13 @@
         "data": {
           "farm_id": "Farm"
         }
+      },
+      "reauth_confirm": {
+        "title": "Sign in again",
+        "description": "The sign-in for {email} is no longer valid. Enter your urbanhive password.",
+        "data": {
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -27,7 +34,8 @@
       "no_farms": "No farm found in this account."
     },
     "abort": {
-      "already_configured": "This farm is already set up."
+      "already_configured": "This farm is already set up.",
+      "reauth_successful": "Signed in again."
     }
   },
   "options": {
@@ -36,12 +44,17 @@
         "title": "Options",
         "data": {
           "host": "Local address (optional)",
-          "prefer_cloud": "Use cloud instead of local access"
+          "prefer_cloud": "Use the cloud instead of local access"
         },
         "data_description": {
-          "prefer_cloud": "Only useful if the farm is not reachable on your network. Cloud values may be outdated."
+          "prefer_cloud": "Only useful if the farm is not reachable on your network. Cloud values can be outdated."
         }
       }
+    }
+  },
+  "device": {
+    "level": {
+      "name": "{farm} level {row}"
     }
   },
   "entity": {
@@ -55,8 +68,11 @@
       "signal_strength": {
         "name": "Wi-Fi signal"
       },
-      "cleaning_date": {
-        "name": "Cleaning"
+      "last_cleaning": {
+        "name": "Last cleaning"
+      },
+      "next_cleaning": {
+        "name": "Next cleaning"
       }
     },
     "binary_sensor": {
@@ -89,10 +105,10 @@
         "name": "Light off"
       },
       "dim_start": {
-        "name": "Dimming from"
+        "name": "Dimming {window} from"
       },
       "dim_end": {
-        "name": "Dimming until"
+        "name": "Dimming {window} until"
       }
     },
     "number": {
@@ -100,12 +116,12 @@
         "name": "Brightness"
       },
       "dim_brightness": {
-        "name": "Dimming brightness"
+        "name": "Dimming {window} brightness"
       }
     },
     "switch": {
       "dimming": {
-        "name": "Dimming"
+        "name": "Dimming {window}"
       },
       "water_check": {
         "name": "Water check"
@@ -114,6 +130,11 @@
     "todo": {
       "tasks": {
         "name": "Tasks"
+      }
+    },
+    "button": {
+      "cleaned": {
+        "name": "Cleaning done"
       }
     }
   },
@@ -127,11 +148,6 @@
           "description": "When the plant was planted."
         }
       }
-    }
-  },
-  "device": {
-    "level": {
-      "name": "{farm} level {row}"
     }
   }
 }

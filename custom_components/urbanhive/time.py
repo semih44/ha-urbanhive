@@ -1,12 +1,11 @@
-"""Uhrzeiten der urbanhive-homefarm: Lichtzeit und Dimmzeit."""
+"""Times of the urbanhive homefarm: light schedule and dimming windows."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import time
 from typing import Any
 
-from homeassistant.components.time import TimeEntity, TimeEntityDescription
+from homeassistant.components.time import TimeEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -14,23 +13,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api import UrbanhiveError
 from .coordinator import UrbanhiveConfigEntry, UrbanhiveCoordinator
-from .entity import UrbanhiveEntity, dim_entry, with_dim_entry
-
-
-@dataclass(frozen=True, kw_only=True)
-class UrbanhiveTimeDescription(TimeEntityDescription):
-    """Beschreibt eine Uhrzeit und wo sie in den Farm-Einstellungen steht."""
-
-    prefix: str  # "start" oder "end"
-    dim: bool  # True: erste Dimmzeit, False: Lichtzeit
-
-
-TIMES = (
-    UrbanhiveTimeDescription(key="light_start", translation_key="light_start", prefix="start", dim=False),
-    UrbanhiveTimeDescription(key="light_end", translation_key="light_end", prefix="end", dim=False),
-    UrbanhiveTimeDescription(key="dim_start", translation_key="dim_start", prefix="start", dim=True),
-    UrbanhiveTimeDescription(key="dim_end", translation_key="dim_end", prefix="end", dim=True),
-)
+from .entity import MAX_DIM_WINDOWS, UrbanhiveEntity, dim_entry, with_dim_entry
 
 
 async def async_setup_entry(
@@ -38,57 +21,97 @@ async def async_setup_entry(
     entry: UrbanhiveConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Licht- und Dimmzeiten einrichten."""
+    """Set up light on/off times and the from/until times of each dimming window."""
     coordinator = entry.runtime_data
-    async_add_entities(UrbanhiveTime(coordinator, d) for d in TIMES)
+    entities: list[TimeEntity] = [
+        UrbanhiveLightTime(coordinator, "start"),
+        UrbanhiveLightTime(coordinator, "end"),
+    ]
+    for index in range(MAX_DIM_WINDOWS):
+        entities += [
+            UrbanhiveDimTime(coordinator, index, "start"),
+            UrbanhiveDimTime(coordinator, index, "end"),
+        ]
+    async_add_entities(entities)
 
 
-class UrbanhiveTime(UrbanhiveEntity, TimeEntity):
-    """Beginn oder Ende der Licht- bzw. Dimmzeit."""
+def _read(source: dict[str, Any], prefix: str) -> time:
+    return time(int(source.get(f"{prefix}Hour", 0)), int(source.get(f"{prefix}Minute", 0)))
+
+
+class UrbanhiveLightTime(UrbanhiveEntity, TimeEntity):
+    """Time the plant light switches on ("start") or off ("end")."""
 
     _attr_entity_category = EntityCategory.CONFIG
 
-    entity_description: UrbanhiveTimeDescription
-
-    def __init__(
-        self, coordinator: UrbanhiveCoordinator, description: UrbanhiveTimeDescription
-    ) -> None:
-        """Mit Koordinator und Beschreibung anlegen."""
+    def __init__(self, coordinator: UrbanhiveCoordinator, prefix: str) -> None:
+        """Create for start or end."""
         super().__init__(coordinator)
-        self.entity_description = description
-        self._attr_unique_id = f"{coordinator.farm_id}_{description.key}"
-
-    def _source(self) -> dict[str, Any] | None:
-        if self.entity_description.dim:
-            return dim_entry(self._details)
-        return self._details.get("lightTime")
-
-    @property
-    def available(self) -> bool:
-        """Dimmzeiten nur, solange Dimmen eingeschaltet ist."""
-        return super().available and self._source() is not None
+        self._prefix = prefix
+        self._attr_translation_key = f"light_{prefix}"
+        self._attr_unique_id = f"{coordinator.farm_id}_light_{prefix}"
 
     @property
     def native_value(self) -> time | None:
-        """Eingestellte Uhrzeit."""
-        source = self._source()
-        if source is None:
-            return None
-        p = self.entity_description.prefix
-        return time(int(source.get(f"{p}Hour", 0)), int(source.get(f"{p}Minute", 0)))
+        """Configured time."""
+        light_time = self._details.get("lightTime")
+        return _read(light_time, self._prefix) if light_time else None
 
     async def async_set_value(self, value: time) -> None:
-        """Uhrzeit ändern."""
-        p = self.entity_description.prefix
-        change = {f"{p}Hour": value.hour, f"{p}Minute": value.minute}
-        if self.entity_description.dim:
-            entry = dim_entry(self._details)
-            if entry is None:
-                raise HomeAssistantError("Dimmen ist ausgeschaltet")
-            changes = {"dimTimeList": with_dim_entry(self._details, {**entry, **change})}
-        else:
-            changes = {"lightTime": {**self._details.get("lightTime", {}), **change}}
+        """Change the time."""
+        light_time = {
+            **self._details.get("lightTime", {}),
+            f"{self._prefix}Hour": value.hour,
+            f"{self._prefix}Minute": value.minute,
+        }
         try:
-            await self.coordinator.async_set_details(changes)
+            await self.coordinator.async_set_details({"lightTime": light_time})
         except UrbanhiveError as err:
-            raise HomeAssistantError(f"Uhrzeit nicht geändert: {err}") from err
+            raise HomeAssistantError(f"Time not changed: {err}") from err
+
+
+class UrbanhiveDimTime(UrbanhiveEntity, TimeEntity):
+    """Start ("start") or end ("end") of a dimming window."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(
+        self, coordinator: UrbanhiveCoordinator, index: int, prefix: str
+    ) -> None:
+        """Create for window number index (0-based)."""
+        super().__init__(coordinator)
+        self._index = index
+        self._prefix = prefix
+        self._attr_translation_key = f"dim_{prefix}"
+        self._attr_translation_placeholders = {"window": str(index + 1)}
+        # Window 1 keeps the unique IDs of earlier versions.
+        window = "dim" if index == 0 else f"dim_{index + 1}"
+        self._attr_unique_id = f"{coordinator.farm_id}_{window}_{prefix}"
+
+    @property
+    def available(self) -> bool:
+        """Only while the window exists."""
+        return super().available and dim_entry(self._details, self._index) is not None
+
+    @property
+    def native_value(self) -> time | None:
+        """Configured time."""
+        entry = dim_entry(self._details, self._index)
+        return _read(entry, self._prefix) if entry else None
+
+    async def async_set_value(self, value: time) -> None:
+        """Change the time."""
+        entry = dim_entry(self._details, self._index)
+        if entry is None:
+            raise HomeAssistantError("This dimming window is off")
+        changed = {
+            **entry,
+            f"{self._prefix}Hour": value.hour,
+            f"{self._prefix}Minute": value.minute,
+        }
+        try:
+            await self.coordinator.async_set_details(
+                {"dimTimeList": with_dim_entry(self._details, self._index, changed)}
+            )
+        except UrbanhiveError as err:
+            raise HomeAssistantError(f"Time not changed: {err}") from err

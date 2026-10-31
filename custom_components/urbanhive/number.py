@@ -1,4 +1,4 @@
-"""Zahlenwerte der urbanhive-homefarm: Helligkeit und Dimm-Helligkeit."""
+"""Numbers of the urbanhive homefarm: brightness and dimming brightness."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api import UrbanhiveError
 from .coordinator import UrbanhiveConfigEntry, UrbanhiveCoordinator
-from .entity import UrbanhiveEntity, dim_entry, with_dim_entry
+from .entity import MAX_DIM_WINDOWS, UrbanhiveEntity, dim_entry, with_dim_entry
 
 
 async def async_setup_entry(
@@ -18,11 +18,11 @@ async def async_setup_entry(
     entry: UrbanhiveConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Helligkeit und Dimm-Helligkeit einrichten."""
+    """Set up the brightness and the brightness of each dimming window."""
     coordinator = entry.runtime_data
-    async_add_entities(
-        [UrbanhiveBrightness(coordinator), UrbanhiveDimBrightness(coordinator)]
-    )
+    entities: list[NumberEntity] = [UrbanhiveBrightness(coordinator)]
+    entities += [UrbanhiveDimBrightness(coordinator, i) for i in range(MAX_DIM_WINDOWS)]
+    async_add_entities(entities)
 
 
 class _PercentNumber(UrbanhiveEntity, NumberEntity):
@@ -35,58 +35,63 @@ class _PercentNumber(UrbanhiveEntity, NumberEntity):
 
 
 class UrbanhiveBrightness(_PercentNumber):
-    """Grundhelligkeit des Pflanzenlichts."""
+    """Base brightness of the plant light."""
 
     _attr_translation_key = "brightness"
     _attr_native_min_value = 10
 
     def __init__(self, coordinator: UrbanhiveCoordinator) -> None:
-        """Mit dem Koordinator anlegen."""
+        """Create with the coordinator."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{coordinator.farm_id}_brightness"
 
     @property
     def native_value(self) -> float | None:
-        """Eingestellte Helligkeit in Prozent."""
+        """Brightness in percent."""
         return self._details.get("brightness")
 
     async def async_set_native_value(self, value: float) -> None:
-        """Helligkeit ändern."""
+        """Change the brightness."""
         try:
             await self.coordinator.async_set_details({"brightness": int(value)})
         except UrbanhiveError as err:
-            raise HomeAssistantError(f"Helligkeit nicht geändert: {err}") from err
+            raise HomeAssistantError(f"Brightness not changed: {err}") from err
 
 
 class UrbanhiveDimBrightness(_PercentNumber):
-    """Helligkeit während der Dimmzeit."""
+    """Brightness during a dimming window."""
 
     _attr_translation_key = "dim_brightness"
 
-    def __init__(self, coordinator: UrbanhiveCoordinator) -> None:
-        """Mit dem Koordinator anlegen."""
+    def __init__(self, coordinator: UrbanhiveCoordinator, index: int) -> None:
+        """Create for window number index (0-based)."""
         super().__init__(coordinator)
-        self._attr_unique_id = f"{coordinator.farm_id}_dim_brightness"
+        self._index = index
+        self._attr_translation_placeholders = {"window": str(index + 1)}
+        # Window 1 keeps the unique ID of earlier versions.
+        window = "dim" if index == 0 else f"dim_{index + 1}"
+        self._attr_unique_id = f"{coordinator.farm_id}_{window}_brightness"
 
     @property
     def available(self) -> bool:
-        """Nur, solange Dimmen eingeschaltet ist."""
-        return super().available and dim_entry(self._details) is not None
+        """Only while the window exists."""
+        return super().available and dim_entry(self._details, self._index) is not None
 
     @property
     def native_value(self) -> float | None:
-        """Helligkeit der Dimmzeit in Prozent."""
-        entry = dim_entry(self._details)
+        """Brightness of the window in percent."""
+        entry = dim_entry(self._details, self._index)
         return None if entry is None else entry.get("brightness")
 
     async def async_set_native_value(self, value: float) -> None:
-        """Dimm-Helligkeit ändern."""
-        entry = dim_entry(self._details)
+        """Change the brightness of the window."""
+        entry = dim_entry(self._details, self._index)
         if entry is None:
-            raise HomeAssistantError("Dimmen ist ausgeschaltet")
+            raise HomeAssistantError("This dimming window is off")
+        changed = {**entry, "brightness": int(value)}
         try:
             await self.coordinator.async_set_details(
-                {"dimTimeList": with_dim_entry(self._details, {**entry, "brightness": int(value)})}
+                {"dimTimeList": with_dim_entry(self._details, self._index, changed)}
             )
         except UrbanhiveError as err:
-            raise HomeAssistantError(f"Dimm-Helligkeit nicht geändert: {err}") from err
+            raise HomeAssistantError(f"Dimming brightness not changed: {err}") from err
