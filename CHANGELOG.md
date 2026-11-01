@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.3
+
+Maintenance release, no changes to entities or behaviour.
+
+- Integration category "Garden & plants" in the manifest
+- README: the license link now works when the README is shown inside HACS
+- CI on current GitHub Actions versions and Ubuntu 26.04
+
 ## v0.3.2
 
 Maintenance release, no changes to entities or behaviour.
