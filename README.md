@@ -3,7 +3,7 @@
 [![release](https://img.shields.io/github/v/release/semih44/ha-urbanhive?label=release)](https://github.com/semih44/ha-urbanhive/releases)
 [![downloads](https://img.shields.io/github/downloads/semih44/ha-urbanhive/total?label=downloads&color=brightgreen)](https://github.com/semih44/ha-urbanhive/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5)](https://hacs.xyz/docs/faq/custom_repositories)
-[![License](https://img.shields.io/github/license/semih44/ha-urbanhive?color=yellow)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](https://github.com/semih44/ha-urbanhive/blob/main/LICENSE)
 
 Unofficial Home Assistant integration for the **urbanhive homefarm** indoor farm.
 It reads the farm **locally on your network** and only uses the urbanhive cloud for
