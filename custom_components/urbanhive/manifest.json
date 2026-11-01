@@ -1,7 +1,12 @@
 {
   "domain": "urbanhive",
   "name": "urbanhive homefarm",
-  "codeowners": ["@semih44"],
+  "categories": [
+    "garden_plants"
+  ],
+  "codeowners": [
+    "@semih44"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/semih44/ha-urbanhive",
   "integration_type": "device",
